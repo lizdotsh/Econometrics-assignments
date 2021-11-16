@@ -1,0 +1,269 @@
+---
+title: "Assignment 4"
+author: "Elizabeth Goodwin"
+date: "11/21/2021"
+output:
+  pdf_document:
+    extra_dependencies: booktabs
+  html_document:
+    df_print: paged
+subtitle: 'ECON 308: Econometrics'
+header-includes: \usepackage{longtable}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(kableExtra)
+```
+
+# Question 1
+
+## What is the justification for using LOOCV to estimate the predictive accuracy of a model?
+
+LOOCV is justified to estimate the predictive accuracy of a model because it manages to do cross-validation on a nearly full dataset without losing a significant amount of the dataset. In other forms of cross validation, such as splitting into a testing/training set or using K-fold validation, you nearly always lose a very large amount of your dataset for training in the first place. Leave one out uses all of a dataset but one item, and rotates that left out item to each item in the dataset. While this is very resource intensive, it is also very accurate.
+
+# Question 2
+
+## Under what circumstances is K-fold cross-validation preferable to LOOCV for model selection? When might AIC and BIC be preferable to either
+
+K-fold validation, while less accurate than LOOCV for model selection, has one key advantage: resource usage. LOOCV is incredibly resource intensive, and that intensity can get unreasonably high with larger datasets or more resource intensive models. While LOOCV works with smaller datasets and simple linear models, the more intensive the model the more time it will take up. K-Fold validation allows you to capture a lot of the advantages of LOOCV (using most of your dataset for cross validation) but with far less resource intensity. You pay for this by less accurate model selection, but in many applications the benefits far outweigh the costs.
+
+AIC or BIC also have some advantages compared to both of these selection mechanisms. First off, they use very little computational resources. While with our current technology this is less of an issue, it can still be an issue for very large datasets. K-fold uses less resources compared to LOOCV, but AIC/BIC use nearly no resources. Running K-Fold validation on large datasets can still take a long time, and AIC/BIC can be an easy way to compare models.
+
+# Question 3
+
+Load the dataset, drop 0 observations for education and marriage, and create encoded categorical variables.
+
+    use "credit_default.dta"
+
+    drop if education == 0
+    drop if marriage == 0
+
+    gen sex_enc = 0 
+    replace sex_enc = 1 if sex == 2
+
+
+    gen has_ba = 0
+    replace has_ba = 1 if education <= 2
+
+    gen married = 0
+    replace married = 1 if marriage == 1
+
+Next I generated values showing the fraction repaid every month, and then replaced missing values with zero. I also generated values showing the percent of the credit limit for each bill, and generated a value averaging the 6 variables.
+
+    gen tot_bill = 0 
+    gen tot_pay = 0
+    foreach n of numlist 1/6 {
+      gen payshare`n' = pay_amt`n' / bill_amt`n' 
+      replace payshare`n' = 0 if(payshare`n' == .)
+        replace tot_bill = tot_bill + bill_amt`n'
+        replace tot_pay = tot_pay + pay_amt`n' 
+    }
+    gen frac_paid = tot_pay / tot_bill 
+
+    gen tot_bill_CL_share = 0
+    foreach n of numlist 1/6 {
+        gen bill_CL_share`n' = bill_amt`n' / limit_bal 
+        replace tot_bill_CL_share = tot_bill_CL_share + bill_CL_share`n'
+    }
+    gen avg_bill_CL_share = tot_bill_CL_share / 6
+
+I also changed the pay_n variables to factor variables, as the negative values don't work as factor variables in stata regressions.
+
+        foreach n of numlist 0 2 3 4 5 6 {
+            tostring pay_`n', replace
+            egen payc_`n' = group(pay_`n')
+        }
+
+## Models
+
+### Model 1
+
+This is the first model I used.
+
+    reg defaultpaymentnextmonth limit_bal i.sex i.education i.marriage age frac_paid  ///
+    i.payc_0 i.payc_2 i.payc_3 i.payc_4 i.payc_5 i.payc_6 payshare1 payshare2  ///
+    payshare3 payshare4 payshare5 payshare6 i.education#c.limit_bal ///
+    i.marriage#c.limit_bal c.age#c.limit_bal c.age#c.frac_paid
+
+This model primarily focuses on the status of payment for each month, and the share of the amount owed. It also adds some interaction terms.
+
+### Model 2
+
+This model is similar to the model above, but with a lot more variables. I included all of the bill share of the credit limit as well.
+
+    reg defaultpaymentnextmonth limit_bal i.sex i.education i.marriage age frac_paid i.payc_0 ///
+    i.payc_2 i.payc_3 i.payc_4 i.payc_5 i.payc_6 payshare1 payshare2 payshare3 payshare4 ///
+    payshare5 payshare6 i.education#c.limit_bal i.marriage#c.limit_bal c.age#c.limit_bal ///
+    c.age#c.frac_paid bill_CL_share1 bill_CL_share2 bill_CL_share3 bill_CL_share4  ///
+    bill_CL_share5 bill_CL_share6 avg_bill_CL_share c.avg_bill_CL_share#c.age  ///
+    c.avg_bill_CL_share#i.education 
+
+## Results
+
+```{=tex}
+\input{comparison1.tex}
+\newcommand{\indep}{\perp \!\!\! \perp}
+```
+| Model   | AIC      | BIC      | K-fold(k=40, in MSE) |
+|---------|----------|----------|----------------------|
+| Model 1 | 23859.08 | 23859.08 | .13340243            |
+| Model 2 | 23864.35 | 24658.97 | .1333883             |
+
+: Model Validation
+
+From this is appears that while both models are quite similar overall, there are some differences in model validation. AIC has model 1 being slightly better, with a small increase. BIC has model 1 being better by a larger amount. K-fold validation, however, is extremely similar and has model 2 being ever so slightly better, although it is small enough to not really be significant. The models might just be too similar to really make much of a difference either way.
+
+### Testing on half of dataset
+
+| Model                   | MSE      |
+|-------------------------|----------|
+| Model 1 (In sample)     | .1339462 |
+| Model 1 (Out of sample) | .1318714 |
+| Model 2 (In sample)     | .1337864 |
+| Model 2 (Out of sample) | .1319985 |
+
+: Model Validation on half of dataset
+
+Model 2 worked better on the in the in sample dataset, while model 1 worked better in the out of sample dataset. This difference is relatively small, however. Model 1 is a simpler dataset, so the result makes sense.
+
+### Lasso
+
+I used this very rich model to feed a lasso with 40 k-folds. The coefficients exist on the coefficient table on the previous page, as the third(and longest) entry. It has a mean squared error of `.1315139`. It used 102 of the available 168, dropping the rest.
+
+    lasso linear defaultpaymentnextmonth limit_bal i.sex i.education i.marriage age frac_paid \\\
+    i.payc_0 i.payc_2 i.payc_3 i.payc_4 i.payc_5 i.payc_6 payshare1 payshare2 payshare3 \\\
+    payshare4 payshare5 payshare6 i.education#c.limit_bal i.marriage#c.limit_bal  \\\
+    c.age#c.limit_bal c.age#c.frac_paid bill_CL_share1 bill_CL_share2 bill_CL_share3 \\\
+    bill_CL_share4 bill_CL_share5 bill_CL_share6 avg_bill_CL_share c.avg_bill_CL_share#c.age \\\
+    c.avg_bill_CL_share#i.education limit_bal_2 limit_bal_3 bill_amt1_2 bill_amt1_3 \\\
+    bill_amt2_2 bill_amt2_3 bill_amt3_2 bill_amt3_3 bill_amt4_2 bill_amt4_3 bill_amt5_2 \\\
+    bill_amt5_3 bill_amt6_2 bill_amt6_3 pay_amt1_2 pay_amt1_3 pay_amt2_2 pay_amt2_3  \\\
+    pay_amt3_2 pay_amt3_3 pay_amt4_2 pay_amt4_3 pay_amt5_2 pay_amt5_3 pay_amt6_2  \\\
+    pay_amt6_3 tot_bill_2 tot_bill_3 tot_pay_2 tot_pay_3 frac_paid_2 frac_paid_3  \\\
+    limt_bal_age limt_bal_bill_amt1 limt_bal_bill_amt2 limt_bal_bill_amt3 \\\
+    limt_bal_bill_amt4 limt_bal_bill_amt5 limt_bal_bill_amt6 limt_bal_pay_amt1 \\\
+    limt_bal_pay_amt2 limt_bal_pay_amt3 limt_bal_pay_amt4 limt_bal_pay_amt5  \\\
+    limt_bal_pay_amt6 limt_bal_tot_bill limt_bal_tot_pay limt_bal_frac_paid age_bill_amt1 \\\
+    age_bill_amt2 age_bill_amt3 age_bill_amt4 age_bill_amt5 age_bill_amt6 age_pay_amt1 \\\
+    age_pay_amt2 age_pay_amt3 age_pay_amt4 age_pay_amt5 age_pay_amt6 age_tot_bill  \\\
+    age_tot_pay age_frac_paid, folds(40)
+
+```{r out.width = "85%",dpi=300, fig.align = "center", echo=FALSE}
+knitr::include_graphics("/Users/liz/Documents/Projects/ECON 308/Assignment 4/cvpath.pdf")
+```
+
+```{r out.width = "85%",dpi=300, fig.align = "center", echo=FALSE}
+knitr::include_graphics("/Users/liz/Documents/Projects/ECON 308/Assignment 4/cvplot.pdf")
+
+
+```
+
+The most important variables mostly came from the pay variables. pay_0 equaling 3, or payment delay for three months, had one of the largest impacts, with pay_0=2 following closely behind. Larger gaps of payments also had large impacts. Pay values for other months were important as well, with pay3=5 being very important. The largest coefficient of all came from pay_6=7, with a .945 coefficient. this is interesting, as it shows a very long payment delay from a long time ago. So it makes sense that it would be large. Biggest changes that lasso did was getting rid of some of the very large coefficients in the pay_3 variables. One went from -.95 to .316, for instance. another went from .24 to -.03. Honestly though, the MSE of the lasso wasn't all that different from the MSE of the other models. While it was better, it wasn't really a huge impact.
+
+\newpage
+
+# Question 4
+
+```{r include=FALSE}
+Student <- c(1, 2, 3, 4, 5, 6)
+Y1 <- c(8, 9, 5, 8, 7, 1)
+Y0 <- c(9, 5, 6, 5, 2, 1)
+D <- c(0, 0, 1, 1, 1, 0)
+Unit_treatment = Y1 - Y0
+table <- data.frame(Student, Y1, Y0, Unit_treatment, D)
+```
+
+```{r echo=FALSE}
+  
+kbl(table,
+    booktabs = T, 
+    linesep = "",
+    col.names = c("Student", "$Y_1$", "$Y_0$", "$\\delta$", "$D$"), escape = FALSE,
+    caption = "Hypothetical data on potential outcomes and treatment status") %>%
+  kable_styling(latex_options = c("striped", "hold_position"))
+```
+
+(a) Unit treatment effect is simply the outcome if they were treated ($Y_1$) minus the outcome if they were not treated ($Y_0$) for each individual. I filled out the results in column $\delta$ above.
+
+(b) Average Treatment Effect (ATE) is simply the average of all the unit treatment effect, or:
+
+$$\frac{1}{N} \sum_{i=1}^{N} (Y_1i - Y_0i)$$ For these outcomes, the average treatment effect is $1.\overline{666}$
+
+```{r, comment="", prompt=FALSE, tidy=TRUE}
+ATE <- mean(table$Unit_treatment)
+ATE
+```
+
+(c) Below is the average treatment effect for the treated. This might differ from $ATE$ because of a few reasons. First it could be random chance, as our selection here is quite small. Second it could be selection bias, or selection bias If the treated group is not the same as the untreated group, you would expect different.
+
+```{r, comment="", prompt=FALSE, tidy=TRUE}
+ATT <- mean(table$Unit_treatment[table$D == 1])
+ATT
+```
+
+(d) Below is the average effect for the untreated.
+
+```{r, comment="", prompt=FALSE, tidy=TRUE}
+ATU <- mean(table$Unit_treatment[table$D == 0])
+ATU
+```
+
+(e) The naive average treatment effect is the following
+
+$$NATE = ATE + E[Y_0 | D = 1] - E[Y_0 | D = 0] + (1-P(D = 1))(ATT - ATU)$$
+
+Breaking this down into its component parts, lets start with selection bias ($E[Y_0 | D = 1] - E[Y_0 | D = 0]$).
+
+```{r, comment="", prompt=FALSE, tidy=TRUE}
+Selection_Bias = mean(table$Y0[table$D == 1]) - mean(table$Y0[table$D == 0])
+Selection_Bias
+```
+
+Next, we calculate the Heterogeneous Treatment Effect Bias. This is 1 minus the probability of D = 1 (binary variable, can be found by taking average of column) multiplied by the difference between $ATT$ and $ATU$:
+
+```{r, comment="", prompt=FALSE, tidy=TRUE}
+Heterogeneous_TE_Bias = (1 - (mean(table$D) * (ATT - ATU)))
+Heterogeneous_TE_Bias
+```
+
+Finally we put it all together, to calculate $NATE$
+
+```{r, comment="", prompt=FALSE, tidy=TRUE}
+NATE = ATE + Selection_Bias + Heterogeneous_TE_Bias
+NATE
+```
+
+The difference between the $NATE$ and $ATE$:
+
+```{r, comment="", prompt=FALSE, tidy=TRUE}
+Overall_bias = NATE - ATE 
+Overall_bias
+```
+
+(g) $NATE = ATE$ in the absence of selection bias or Heterogeneous Treatment Effect Bias. While individual outcomes of alternate realities are impossible to know, if the two populations are on average the same (ie, no bias in selection nor Heterogeneous TE bias), then $NATE = ATE$
+
+For the NATE ($NATE = E[Y_{1} | D = 1] - E[Y_{0} | D = 0]$) to equal $ATE$:
+
+$$(Y_1, Y_0) \indep D$$
+
+This means that selection bias will have to equal zero:
+
+$$
+E[Y_0 | D=1] - E[Y_0 | D=0] = 0
+$$
+
+And the Heterogeneous Treatment Effect Bias must also be equal to zero, or:
+
+$$
+ATT - ATU = 0
+$$
+
+So if treatment is independent of potential outcomes, then:
+
+$$
+\frac{1}{N_T}\sum^{n}_{i=1} ( y_i | d_i = 1) - \frac{1}{N_C}\sum^{n}_{i=1} ( y_i | d_i = 0) = 
+E[Y_1] - E[Y_0]
+$$ $$
+NATE = ATE
+$$
