@@ -1,0 +1,29 @@
+\begin{table}[htbp]\centering
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\caption{Regression Table (Land Use Only)\label{tab1}}
+\begin{tabular}{l*{6}{c}}
+\toprule
+            &\multicolumn{1}{c}{(1)}         &\multicolumn{1}{c}{(2)}         &\multicolumn{1}{c}{(3)}         &\multicolumn{1}{c}{(4)}         &\multicolumn{1}{c}{(5)}         &\multicolumn{1}{c}{(6)}         \\
+\midrule
+popstand    &      -0.660\sym{***}&      -1.674\sym{***}&      -0.114         &       1.850         &      -0.168         &       1.551         \\
+            &    (0.0665)         &     (0.168)         &     (0.583)         &     (1.271)         &     (0.511)         &     (1.124)         \\
+\addlinespace
+pct\_residential&      -0.790\sym{***}&      -0.674\sym{**} &      -2.695\sym{***}&      -5.575\sym{***}&      -2.672\sym{***}&      -5.694\sym{***}\\
+            &     (0.144)         &     (0.261)         &     (0.648)         &     (1.239)         &     (0.618)         &     (1.181)         \\
+\addlinespace
+pct\_industrial&      -0.588\sym{*}  &      -4.543\sym{***}&      -2.432         &      -1.095         &      -2.573         &      -2.114         \\
+            &     (0.289)         &     (0.611)         &     (2.408)         &     (5.253)         &     (2.153)         &     (4.721)         \\
+\addlinespace
+pct\_commercial&       2.341\sym{***}&       6.111\sym{***}&       1.153         &       0.988         &       1.137         &       0.796         \\
+            &     (0.310)         &     (0.643)         &     (0.774)         &     (1.593)         &     (0.741)         &     (1.528)         \\
+\addlinespace
+\_cons      &       0.184         &      -1.941\sym{*}  &       2.550\sym{***}&       5.430\sym{***}&       2.494\sym{***}&       5.349\sym{***}\\
+            &     (0.373)         &     (0.914)         &     (0.640)         &     (1.369)         &     (0.639)         &     (1.364)         \\
+\midrule
+\(N\)       &       19330         &       19330         &       19330         &       19330         &       19330         &       19330         \\
+adj. \(R^{2}\)&       0.220         &       0.322         &       0.207         &       0.272         &       0.207         &       0.277         \\
+\bottomrule
+\multicolumn{7}{l}{\footnotesize Standard errors in parentheses}\\
+\multicolumn{7}{l}{\footnotesize \sym{*} \(p<0.05\), \sym{**} \(p<0.01\), \sym{***} \(p<0.001\)}\\
+\end{tabular}
+\end{table}

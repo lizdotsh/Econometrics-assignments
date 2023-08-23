@@ -1,0 +1,20 @@
+\begin{table}[htbp]\centering
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\caption{Weighted Regression Table (Excluding most covariates)\label{tab2}}
+\begin{tabular}{l*{6}{c}}
+\toprule
+            &\multicolumn{1}{c}{(1)}         &\multicolumn{1}{c}{(2)}         &\multicolumn{1}{c}{(3)}         &\multicolumn{1}{c}{(4)}         &\multicolumn{1}{c}{(5)}         &\multicolumn{1}{c}{(6)}         \\
+\midrule
+cdl         &      0.0801\sym{*}  &      0.0946\sym{**} &      0.0937\sym{**} &      0.0955\sym{*}  &      0.0985\sym{**} &       0.100\sym{*}  \\
+            &    (0.0359)         &    (0.0293)         &    (0.0305)         &    (0.0386)         &    (0.0315)         &    (0.0411)         \\
+\addlinespace
+pre2\_cdl    &                     &                     &                     &     0.00398         &                     &                     \\
+            &                     &                     &                     &    (0.0234)         &                     &                     \\
+\midrule
+\(N\)       &         550         &         550         &         550         &         550         &         550         &         550         \\
+adj. \(R^{2}\)&       0.926         &       0.930         &       0.933         &       0.933         &       0.934         &       0.951         \\
+\bottomrule
+\multicolumn{7}{l}{\footnotesize Standard errors in parentheses}\\
+\multicolumn{7}{l}{\footnotesize \sym{*} \(p<0.05\), \sym{**} \(p<0.01\), \sym{***} \(p<0.001\)}\\
+\end{tabular}
+\end{table}

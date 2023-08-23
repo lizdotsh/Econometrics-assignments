@@ -1,0 +1,21 @@
+\begin{table}[htbp]\centering
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\caption{Class Size Regression Table\label{tab3}}
+\begin{tabular}{l*{3}{cc}}
+\toprule
+            &\multicolumn{1}{c}{(1)}         &            &\multicolumn{1}{c}{(2)}         &            &\multicolumn{1}{c}{(3)}         &            \\
+\midrule
+classize    &      0.0803         &    (0.0511)&                     &            &      0.0445         &     (0.200)\\
+perc\_disadvantaged&      -0.315\sym{***}&    (0.0173)&     -0.0380\sym{***}&   (0.00948)&      -0.316\sym{***}&    (0.0189)\\
+enrollment  &     -0.0215         &    (0.0732)&       0.232\sym{***}&    (0.0399)&     -0.0136         &    (0.0846)\\
+enroll\_cubic&    0.000228         &  (0.000741)&   -0.000125         &  (0.000409)&    0.000230         &  (0.000740)\\
+over40      &                     &            &       12.93\sym{***}&     (1.430)&                     &            \\
+\_cons      &       69.37\sym{***}&     (1.874)&       16.39\sym{***}&     (0.919)&       69.97\sym{***}&     (3.728)\\
+\midrule
+\(N\)       &        1184         &            &        1185         &            &        1184         &            \\
+adj. \(R^{2}\)&       0.243         &            &       0.455         &            &       0.242         &            \\
+\bottomrule
+\multicolumn{7}{l}{\footnotesize Standard errors in parentheses}\\
+\multicolumn{7}{l}{\footnotesize \sym{*} \(p<0.05\), \sym{**} \(p<0.01\), \sym{***} \(p<0.001\)}\\
+\end{tabular}
+\end{table}

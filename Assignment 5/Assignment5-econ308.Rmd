@@ -1,0 +1,238 @@
+---
+title: "Assignment 5"
+subtitle: 'ECON 308'
+author: "Elizabeth Goodwin"
+date: "12/5/2021"
+output:
+  bookdown::pdf_document2:
+    keep_md: true
+    toc: false
+    number_sections: false
+#indent: true
+header-includes:
+   - \usepackage{indentfirst}
+   - \usepackage{setspace}
+   - \usepackage{wrapfig}
+   - \usepackage{dcolumn}
+   - \usepackage{fancyhdr}
+   - \usepackage{lipsum}
+fontsize: 10pt
+editor_options: 
+  chunk_output_type: inline
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+setwd("/Users/liz/Documents/Projects/ECON 308/Assignment 5")
+library(tidyverse)
+library(magrittr)
+library(kableExtra)
+library(plm)
+```
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[LO, LE]{Elizabeth Goodwin}
+\fancyhead[RO, RE]{ECON 308: Assignment 5}
+\fancyfoot[EC, OC]{\thepage}
+\renewcommand{\headrulewidth}{0pt}
+
+## Question 1
+
+**Suppose a researcher wishes to determine how changes in property tax rates affect housing values. The researcher uses differences-in-differences, exploiting property tax rate changes across counties in a single state.**
+
+(a) For this type of research design, what assumption must hold if they are to accurately estimate the causal effect of property tax rate changes?
+
+i. The main assumption that must hold is the parallel trends assumption. Essentially, you have to assume that if the property tax change did not occur, that the trend in housing values between the counties measured would be the same. This is essential, because DiD uses the trends of the untreated counties as the counter factual for the trends that were treated, and the difference being the effect of the treatment. If, however, an unobserved variable was present that effected housing values in only one counties, exogeneity is violated. 
+
+
+(b) Give two examples of factors that you reasonably expect would invalidate this assumption in this specific context.
+
+i. One factor could be something such as income. If the reason counties change their property taxes is endogenous to the dependent variable, in this case housing values, we may not be able to expect that the counties that changed property taxes would have the same counterfactual change in housing values as the counties that did not change property taxes, since income effects housing values. 
+
+ii. Another factor that could invalidate the assumption is if the change in property values was correlated with density. In areas with lower density, public services/utilities/etc are used by less people and cost more per capita. This can cause less dense areas to raise their property taxes to pay for said services compared to denser areas. Density also effects housing values, especially in areas with artificial constraints on increasing said density. This could cause the counter factual $\Delta$housing values to be different than the $\Delta$housing values in the untreated group. 
+\pagebreak 
+
+## Question 2
+
+**Castle Doctrine laws and homicides: The objective of this question is to replicate the main results of Cheng & Hoekstra (2013). We will focus on the homicide results in Table 5, Panels A-B of the paper (which you can find on Blackboard). The authors use a difference-in-difference strategy to examine the impact of expanded self-defense laws on crime rates. It may be helpful to look over the paper before attempting to complete the analysis below.**
+
+(b) All regressions shown in Table \@ref(tab1)
+
+(c) First I generated the various variables in log form. Descriptions in Table \@ref(tab:varlist)
+```{stata eval=F}
+foreach x of varlist homicide police prisoner lagprisoner  ///
+income exp_subsidy exp_pubwelfare larceny motor {gen `x'_log = log(`x')}
+
+```
+
+
+
+
+
+
+```{r message=FALSE, include=FALSE, tidy=T}
+castle <- haven::read_dta("cheng_hoekstra_data.dta")
+castle %<>% mutate(
+  across(c(homicide, police, prisoner, lagprisoner, income, exp_subsidy, exp_pubwelfare, larceny, motor), log, .names = "{.col}_log")) 
+```
+
+
+(d) 
+```{stata eval=F} 
+eststo: reg homicide_log c.cdl i.sid i.year, vce(cluster sid) 
+```
+
+
+(e) The coefficient on `cdl` represents the change in the log of the homicide rate after it has been introduced for one year. So that means there is around a 8.77 percent increase in homicides due to the castle doctrine being introduced for a year, after controlling for the other covariates. That percentage number is nowhere near statistically significant at this point, however. 
+
+(f) The year and state fixed effects are controlling for the existing trends in the data. So the effects on the underlying change in the overall homicide rate per year are captured by the fixed effects. The state fixed effect is adjusting for the underlying existing homicide rate in each state
+
+(g) You don't need the for loop, this works as well: 
+```{stata eval=F}
+eststo: reg homicide_log c.cdl i.sid i.year i.northeast#i.year i.midwest#i.year ///
+ i.south#i.year i.west#i.year , vce(cluster sid)
+```
+(h) These fixed effects serve to adjust for underlying regional trends in the data as well. So previously the year captured the overall time trends in the data but this represents the additional difference in said trend by region. This allows the untreated group to more closely represent the treated group in trends. 
+
+(i) You don't need this for loop either, `i.sid#c.year` works as well. Regressions shown below.
+
+```{stata eval=FALSE, include=T, echo=T, tidy=T}
+
+eststo: reg homicide_log c.cdl i.sid i.year i.northeast#i.year  ///
+i.midwest#i.year i.south#i.year i.west#i.year  c.income_log ///
+c.police_log c.prisoner_log c.lagprisoner_log c.exp_pubwelfare_log  ///
+c.exp_subsidy_log c.poverty c.unemployrt  c.whitem_15_24 c.whitem_25_44 ///
+ c.blackm_25_44 c.blackm_15_24, vce(cluster sid)
+ 
+ 
+eststo: reg homicide_log  c.cdl pre2_cdl i.sid i.year i.northeast#i.year ///
+i.midwest#i.year i.south#i.year i.west#i.year   c.income_log c.police_log  ///
+c.prisoner_log c.lagprisoner_log c.exp_pubwelfare_log c.exp_subsidy_log ///
+c.poverty c.unemployrt  c.whitem_15_24 c.whitem_25_44 ///
+ c.blackm_25_44 c.blackm_15_24, vce(cluster sid)
+   
+eststo: reg homicide_log c.cdl i.sid i.year i.northeast#i.year ///
+i.midwest#i.year i.south#i.year i.west#i.year  c.income_log c.police_log  ///
+c.prisoner_log c.lagprisoner_log c.exp_pubwelfare_log c.exp_subsidy_log  ///
+c.poverty c.unemployrt  c.whitem_15_24 c.whitem_25_44 ///
+c.blackm_25_44 c.blackm_15_24 c.larceny_log c.motor_log, vce(cluster sid)
+  
+eststo: reg homicide_log  c.cdl i.sid i.year i.northeast#i.year ///
+i.midwest#i.year i.south#i.year i.west#i.year   c.income_log c.police_log  ///
+c.prisoner_log c.lagprisoner_log c.exp_pubwelfare_log c.exp_subsidy_log ///
+c.poverty c.unemployrt  c.whitem_15_24 c.whitem_25_44 ///
+c.blackm_25_44 c.blackm_15_24 i.sid#c.year, vce(cluster sid) 
+ 
+ 
+esttab using crime.tex, keep(cdl pre2_cdl) se ar2 replace booktabs ///                     
+ title(Regression Table (Excluding Long Factor Covariates)\label{tab1}) nomtitles 
+```
+
+(j) Shown in Table \@ref(tab:table3)
+
+(k) This tells you if the states that pass the laws diverge before they even actually pass the laws. Used to test if the research design is violated. 
+
+(l) This tests the DiD design, as they do not expect these crimes to be very impacted by the change in the law, so they are used to pick up differential trends in crime. If the assumption holds, they would expect to see no effects on these crimes. 
+
+(m) This adjusts by state specific trends, and allows each state to follow a different trend. This allows you to see if the states are following their own individual trends that are significantly different after adjusting for everything else. 
+
+(o) In Table \@ref(tab2). The conclusions drawn vary quite a lot. Most notably, all results become statistically significant. In Table \@ref(tab1), the standard errors are large enough that not a single value is significant enough to reject the null hypothesis. So the most important conclusion is that the chance of the castle doctrine giving us these results given it has no effect is very unlikely. Assuming the DiD design adheres to the parallel trends assumption, the Castel Doctrine has a positive impact on homicides. In addition, the effect of `pre2_cdl` is very much not statistically significant, so the trends did not start diverging before the laws were passed. 
+
+
+
+
+
+ 
+
+
+
+
+
+\pagebreak 
+
+## Question 3
+**Class sizes and student performance: An important question in education policymaking is the relationship between class sizes and learning. Smaller classes are thought to promote more one-on-one interactions between teacher and student, and also allow for more effective monitoring. However, they also require more teachers to serve a given student population, which entails additional costs. So it would be useful to know just how much benefit students receive from smaller class sizes. Here, we’ll think about what we might encounter when attempting to study this question, and explore an IV strategy that could help.**
+
+(a) No, you cannot. Students in larger classes may go to lower income schools with fewer resources, for instance. Other omitted variables could include school district, smaller classes being more advanced classes, etc. 
+
+(c) After controlling for percent disadvantaged, enrollment, and a cubic enrollment term, class size no longer has a statistically significant effect on average math scores. Therefore, we cannot answer either way and cannot reject the null hypothesis. 
+```{stata eval=F}
+eststo: reg avgmath classize perc_disadvantaged enrollment c.enrollment#c.enrollment
+```
+
+(d) Scatter plot in Figure \@ref(fig:enrollclass). There is a very sharp break at an enrollment of 40. This seems perfect for a regression discontinuity design. 
+
+```{stata eval=F}
+gen over40 = 0 
+replace over40 = 1 if classize > 40 
+
+eststo: reg classize over40 perc_disadvantaged enrollment c.enrollment#c.enrollment
+
+eststo: ivregress 2sls avgmath perc_disadvantaged enrollment ///
+c.enrollment#c.enrollment (classize = over40)
+
+```
+
+(e) It strongly passes the relevance test. Seen in regression 2 in Table \@ref(tab3)
+
+(f) Regression 3 in Table \@ref(tab3)
+
+(g) The better model between OLS and 2SLS is the one with the lowest bias. While 2SLS is likely a less biased estimator, the 2SLS has much higher variance, and does not produce any statistically significant effect of class sizes on education. This means we can't make any conclusion in either direction based on this data. However, our model appears to be one in which using RDD could be very useful, as there is a clear discontinuity in the data, and would likely be more effective than either OLS or 2SLS. 
+
+```{r varlist, echo=FALSE}
+tribble(
+  ~Variables, ~Description,
+  "homicide", "Homecide count per 100,000. May potentially include homicides justified under new self defense law that were inproperly reported as criminal. ", 
+  "police", "Full-time equivalent police per 100,000 state population. Captures the effects of deterrence caused by additional policing. ", 
+  "prisoner", "Prisoners per 100,000 state population. Captures the effects of incapacitation caused by additional incarceration",
+  "lagprisoner", "Lagged prisoners per 100,000 state population. Captures the effects of incapacitation caused by additional incarceration",
+  "exp\\_subsidy", "State spending on subsidies per capita. Captures effect of generosity of public subsidies", 
+  "exp\\_pubwelfare", "State spending on public assistance per capita. Captures effect of generosity of public welfare", 
+  "larceny", "Larceny count per 100,000 state population. Used as a falsification test of the DiD design, as they don't expect deterrence to be as likely.", 
+  "motor", "Motor Vehicle theft count per 100,000 state population. "
+) %>% 
+  kbl(
+    booktabs = T, 
+    linesep = "",
+ #   col.names = c("Order", "Store", "Sample Size"), 
+    escape = FALSE,
+    caption = "Description of variables") %>%
+  kable_styling(latex_options = c("striped", "hold_position"), font_size=10, full_width = F) %>%
+  column_spec(1, width="1in") %>%
+  column_spec(2, width = "4.5in")
+```
+```{r table3, echo=FALSE}
+tribble(
+  ~Variables, ~Use,
+  "Income (Log)", "Controls for income, as change in income of a state could effect crime", 
+  "Police (Log)", "Change in size of police forces could effect crime rates", 
+  "Prisoner (Log)", "Change in prison population effects crime via deterrence and incapacitation", 
+  "Lag Prisoner (Log)", "Similar reasons for Prisoner(Log), with added effect of time delay in effects", 
+  "Per Cap spending on Subsidies", "Could effect incentives for crime", 
+  "Per Cap spending on Welfare", "Could effect incentives for crime", 
+  "Poverty Rate", "Poverty is an incentive for crime, could be endogenous variable", 
+  "Demographics", "Could correlate with crime"
+) %>% 
+   kbl(
+    booktabs = T, 
+    linesep = "",
+ #   col.names = c("Order", "Store", "Sample Size"), 
+    escape = FALSE,
+    caption = "Use of added variables in column 3") %>%
+  kable_styling(latex_options = c("striped", "hold_position"), font_size=10, full_width = F) %>%
+  column_spec(1, width="1.5in") %>%
+  column_spec(2, width = "4.5in")
+```
+
+\input{crime.tex}
+\input{crime1.tex}
+
+```{r enrollclass, fig.cap= 'Enrollment by Class Size', out.width='70%', fig.align='center'}
+haven::read_dta("maimonides.dta") %>% 
+ggplot(aes(x=enrollment, y=classize)) + 
+  geom_point(color = "violetred3") + labs(x='Enrollment', y='Class Size')
+
+```
+\input{class1.tex}
+
